@@ -7,25 +7,31 @@ package io.flutter.plugins.webviewflutter;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
 import androidx.annotation.NonNull;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.platform.PlatformView;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 public class FlutterWebView implements PlatformView, MethodCallHandler {
   private static final String JS_CHANNEL_NAMES_FIELD = "javascriptChannelNames";
@@ -33,6 +39,7 @@ public class FlutterWebView implements PlatformView, MethodCallHandler {
   private final MethodChannel methodChannel;
   private final FlutterWebViewClient flutterWebViewClient;
   private final Handler platformThreadHandler;
+  private final FileChooserHelper fileChooserHelper;
 
   // Verifies that a url opened by `Window.open` has a secure url.
   private class FlutterWebChromeClient extends WebChromeClient {
@@ -72,6 +79,30 @@ public class FlutterWebView implements PlatformView, MethodCallHandler {
 
       return true;
     }
+
+    //The undocumented magic method override
+    //Eclipse will swear at you if you try to put @Override here
+    // For Android 3.0+
+    public void openFileChooser(ValueCallback<Uri> uploadMsg) {
+      fileChooserHelper.openFileChooser(uploadMsg);
+    }
+
+    // For Android 3.0+
+    public void openFileChooser(ValueCallback uploadMsg, String acceptType) {
+      fileChooserHelper.openFileChooser(uploadMsg, acceptType);
+    }
+
+    //For Android 4.1
+    public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType, String capture) {
+      fileChooserHelper.openFileChooser(uploadMsg, acceptType, capture);
+    }
+
+    //For Android 5.0+
+    public boolean onShowFileChooser(
+            WebView webView, ValueCallback<Uri[]> filePathCallback,
+            FileChooserParams fileChooserParams) {
+      return fileChooserHelper.onShowFileChooser(webView, filePathCallback, fileChooserParams);
+    }
   }
 
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -82,6 +113,8 @@ public class FlutterWebView implements PlatformView, MethodCallHandler {
       int id,
       Map<String, Object> params,
       View containerView) {
+
+    fileChooserHelper = new FileChooserHelper();
 
     DisplayListenerProxy displayListenerProxy = new DisplayListenerProxy();
     DisplayManager displayManager =
@@ -409,6 +442,12 @@ public class FlutterWebView implements PlatformView, MethodCallHandler {
 
   private void updateUserAgent(String userAgent) {
     webView.getSettings().setUserAgentString(userAgent);
+  }
+
+  public void setActivityPluginBinding(ActivityPluginBinding binding) {
+    if (fileChooserHelper != null) {
+      fileChooserHelper.setActivityPluginBinding(binding);
+    }
   }
 
   @Override
