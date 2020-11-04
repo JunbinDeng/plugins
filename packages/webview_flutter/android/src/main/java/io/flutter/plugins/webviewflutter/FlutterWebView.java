@@ -10,6 +10,7 @@ import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -94,6 +95,15 @@ public class FlutterWebView implements PlatformView, MethodCallHandler {
     // Allow local storage.
     webView.getSettings().setDomStorageEnabled(true);
     webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+    if (params.containsKey("mixContentMode")) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        Integer mixContentMode = (Integer) params.get("mixContentMode");
+        if (mixContentMode != null) {
+          webView.getSettings().setMixedContentMode(mixContentMode);
+          Log.e("FlutterWebView", "setMixedContentMode" + mixContentMode);
+        }
+      }
+    }
 
     // Multi windows is set with FlutterWebChromeClient by default to handle internal bug: b/159892679.
     webView.getSettings().setSupportMultipleWindows(true);
