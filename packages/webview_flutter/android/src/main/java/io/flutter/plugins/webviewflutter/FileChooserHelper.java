@@ -30,7 +30,6 @@ import static android.app.Activity.RESULT_OK;
 
 class FileChooserHelper {
 
-    private static final String TAG = "FlutterWebView";
     private final static int FILE_CHOOSER_RESULT_CODE = 1;
 
     private final ResultHandler resultHandler = new ResultHandler();
@@ -151,7 +150,6 @@ class FileChooserHelper {
     public boolean onShowFileChooser(
             WebView webView, ValueCallback<Uri[]> filePathCallback,
             WebChromeClient.FileChooserParams fileChooserParams) {
-        Log.d(TAG, "onShowFileChooser called");
         if (mUploadMessageArray != null) {
             mUploadMessageArray.onReceiveValue(null);
         }
@@ -163,13 +161,13 @@ class FileChooserHelper {
         videoUri = null;
         if (acceptsImages(acceptTypes)) {
             Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            fileUri = getOutputFilename(webView.getContext(), MediaStore.ACTION_IMAGE_CAPTURE);
+            fileUri = getOutputFilename(MediaStore.ACTION_IMAGE_CAPTURE);
             takePhotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
             intentList.add(takePhotoIntent);
         }
         if (acceptsVideo(acceptTypes)) {
             Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-            videoUri = getOutputFilename(webView.getContext(), MediaStore.ACTION_VIDEO_CAPTURE);
+            videoUri = getOutputFilename(MediaStore.ACTION_VIDEO_CAPTURE);
             takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, videoUri);
             intentList.add(takeVideoIntent);
         }
@@ -188,7 +186,7 @@ class FileChooserHelper {
         Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
         chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
-        ((Activity) webView.getContext()).startActivityForResult(chooserIntent, FILE_CHOOSER_RESULT_CODE);
+        activity.startActivityForResult(chooserIntent, FILE_CHOOSER_RESULT_CODE);
         return true;
     }
 
@@ -201,7 +199,7 @@ class FileChooserHelper {
 
         return new String[]{};
     }
-    private Uri getOutputFilename(Context context, String intentType) {
+    private Uri getOutputFilename(String intentType) {
         String prefix = "";
         String suffix = "";
 
@@ -216,14 +214,14 @@ class FileChooserHelper {
         String packageName = context.getPackageName();
         File capturedFile = null;
         try {
-            capturedFile = createCapturedFile(context, prefix, suffix);
+            capturedFile = createCapturedFile(prefix, suffix);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return FileProvider.getUriForFile(context, packageName + ".fileprovider", capturedFile);
     }
 
-    private File createCapturedFile(Context context, String prefix, String suffix) throws IOException {
+    private File createCapturedFile(String prefix, String suffix) throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = prefix + "_" + timeStamp;
         File storageDir = context.getExternalFilesDir(null);
@@ -256,7 +254,6 @@ class FileChooserHelper {
     }
 
     public void setActivityPluginBinding(ActivityPluginBinding binding) {
-        Log.d(TAG, "setActivityPluginBinding called");
         if (binding == null && this.binding != null) {
             this.binding.removeActivityResultListener(activityResultListener);
             this.binding = null;

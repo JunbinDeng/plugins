@@ -4,8 +4,6 @@
 
 package io.flutter.plugins.webviewflutter;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
